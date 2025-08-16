@@ -1,0 +1,74 @@
+{
+  "name": "ai-meeting-notes-summarizer",
+  "version": "1.0.0",
+  "description": "AI-powered meeting notes summarizer and sharer - web application",
+  "homepage": "./",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+    "serve": "serve -s build",
+    "deploy": "npm run build && npm run serve"
+  },
+  "keywords": [
+    "react",
+    "meeting",
+    "notes",
+    "ai",
+    "summarization",
+    "gemini",
+    "web-app"
+  ],
+  "author": "AI Meeting Notes Team",
+  "license": "MIT",
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@google/generative-ai": "^0.24.1",
+    "@huggingface/transformers": "^3.7.0",
+    "@mui/icons-material": "^5.14.19",
+    "@mui/material": "^5.14.20",
+    "@xenova/transformers": "^2.17.2",
+    "docx": "^9.5.1",
+    "file-saver": "^2.0.5",
+    "jspdf": "^3.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
+    "react-scripts": "5.0.1",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.5",
+    "@babel/preset-env": "^7.23.5",
+    "@babel/preset-react": "^7.23.3",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^14.6.1",
+    "autoprefixer": "^10.4.16",
+    "serve": "^14.2.0",
+    "eslint": "^8.54.0",
+    "eslint-config-react-app": "^7.0.1",
+    "fake-indexeddb": "^6.0.1",
+    "jest-environment-jsdom": "^30.0.5",
+    "jest-transform-css": "^6.0.3",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "webpack": "^5.89.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

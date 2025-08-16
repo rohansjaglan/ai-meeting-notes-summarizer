@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Speech API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-warning { background-color: #ffc107; color: black; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        #transcript {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            min-height: 100px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        #interim {
+            font-style: italic;
+            color: #666;
+            background-color: #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .log {
+            background-color: #f1f1f1;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Web Speech API Test</h1>
+    
+    <div id="support-status" class="status"></div>
+    
+    <div>
+        <button id="start-btn" class="btn-primary">Start Recognition</button>
+        <button id="stop-btn" class="btn-danger" disabled>Stop Recognition</button>
+        <button id="reset-btn" class="btn-warning">Reset</button>
+        <button id="test-mic-btn" class="btn-secondary">Test Microphone</button>
+    </div>
+    
+    <div id="status" class="status info">Ready to start</div>
+    
+    <h3>Current Speech (Interim):</h3>
+    <div id="interim">Speak to see real-time transcription...</div>
+    
+    <h3>Final Transcript:</h3>
+    <div id="transcript">No transcript yet. Click "Start Recognition" and speak.</div>
+    
+    <h3>Debug Log:</h3>
+    <div id="log" class="log"></div>
+    
+    <h3>Instructions:</h3>
+    <ol>
+        <li>Make sure you're using HTTPS (required for Web Speech API)</li>
+        <li>Click "Start Recognition" and allow microphone permissions</li>
+        <li>Speak clearly into your microphone</li>
+        <li>Watch for real-time transcription above</li>
+        <li>Check the debug log for any errors</li>
+    </ol>
+
+    <script>
+        let recognition = null;
+        let isListening = false;
+        let finalTranscript = '';
+        
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const testMicBtn = document.getElementById('test-mic-btn');
+        const statusDiv = document.getElementById('status');
+        const supportDiv = document.getElementById('support-status');
+        const interimDiv = document.getElementById('interim');
+        const transcriptDiv = document.getElementById('transcript');
+        const logDiv = document.getElementById('log');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            log(`Status: ${message}`);
+        }
+        
+        function checkSupport() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                supportDiv.textContent = '✅ Web Speech API is supported';
+                supportDiv.className = 'status success';
+                log('Web Speech API is supported');
+                return true;
+            } else {
+                supportDiv.textContent = '❌ Web Speech API is not supported in this browser';
+                supportDiv.className = 'status error';
+                log('Web Speech API is not supported');
+                return false;
+            }
+        }
+        
+        function initializeRecognition() {
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                recognition.maxAlternatives = 1;
+                
+                recognition.onstart = function() {
+                    log('Speech recognition started');
+                    updateStatus('Listening...', 'success');
+                    isListening = true;
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                };
+                
+                recognition.onresult = function(event) {
+                    let interimTranscript = '';
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        const confidence = event.results[i][0].confidence;
+                        
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript + ' ';
+                            log(`Final result: "${transcript}" (confidence: ${confidence})`);
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+                    
+                    interimDiv.textContent = interimTranscript || 'Speak to see real-time transcription...';
+                    transcriptDiv.textContent = finalTranscript || 'No transcript yet.';
+                };
+                
+                recognition.onerror = function(event) {
+                    log(`Speech recognition error: ${event.error} - ${event.message || 'No additional info'}`);
+                    updateStatus(`Error: ${event.error}`, 'error');
+                    
+                    if (event.error === 'network') {
+                        log('Network error - this often means recognition is already running');
+                        updateStatus('Network error - try resetting and starting again', 'warning');
+                    } else if (event.error === 'not-allowed') {
+                        updateStatus('Microphone access denied', 'error');
+                    } else if (event.error === 'no-speech') {
+                        log('No speech detected - this is normal, recognition will continue');
+                        // Don't update status for no-speech as it's normal
+                    }
+                };
+                
+                recognition.onend = function() {
+                    log('Speech recognition ended');
+                    isListening = false;
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    
+                    if (recognition && !stopBtn.disabled) {
+                        // Auto-restart if we're still supposed to be listening
+                        log('Auto-restarting recognition...');
+                        setTimeout(() => {
+                            if (!isListening) {
+                                try {
+                                    recognition.start();
+                                } catch (error) {
+                                    log(`Failed to restart: ${error.message}`);
+                                    updateStatus('Failed to restart recognition', 'error');
+                                }
+                            }
+                        }, 100);
+                    } else {
+                        updateStatus('Recognition stopped', 'info');
+                    }
+                };
+                
+                log('Speech recognition initialized');
+                return true;
+                
+            } catch (error) {
+                log(`Failed to initialize recognition: ${error.message}`);
+                updateStatus('Failed to initialize recognition', 'error');
+                return false;
+            }
+        }
+        
+        function startRecognition() {
+            if (!recognition && !initializeRecognition()) {
+                return;
+            }
+            
+            try {
+                log('Attempting to start recognition...');
+                recognition.start();
+            } catch (error) {
+                log(`Failed to start recognition: ${error.message}`);
+                updateStatus(`Failed to start: ${error.message}`, 'error');
+            }
+        }
+        
+        function stopRecognition() {
+            if (recognition) {
+                log('Stopping recognition...');
+                recognition.stop();
+                isListening = false;
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                updateStatus('Stopping...', 'warning');
+            }
+        }
+        
+        function resetRecognition() {
+            log('Resetting recognition...');
+            
+            if (recognition) {
+                try {
+                    recognition.stop();
+                    recognition.abort();
+                } catch (error) {
+                    log(`Error during reset: ${error.message}`);
+                }
+            }
+            
+            recognition = null;
+            isListening = false;
+            finalTranscript = '';
+            
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            interimDiv.textContent = 'Speak to see real-time transcription...';
+            transcriptDiv.textContent = 'No transcript yet.';
+            
+            updateStatus('Reset complete', 'info');
+            
+            // Reinitialize
+            initializeRecognition();
+        }
+        
+        async function testMicrophone() {
+            try {
+                log('Testing microphone access...');
+                updateStatus('Testing microphone...', 'warning');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                log('Microphone access granted');
+                updateStatus('Microphone access granted ✅', 'success');
+                
+                // Stop the stream
+                stream.getTracks().forEach(track => track.stop());
+                
+            } catch (error) {
+                log(`Microphone test failed: ${error.message}`);
+                updateStatus(`Microphone access denied: ${error.message}`, 'error');
+            }
+        }
+        
+        // Event listeners
+        startBtn.addEventListener('click', startRecognition);
+        stopBtn.addEventListener('click', stopRecognition);
+        resetBtn.addEventListener('click', resetRecognition);
+        testMicBtn.addEventListener('click', testMicrophone);
+        
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            log('Page loaded, checking support...');
+            
+            if (checkSupport()) {
+                initializeRecognition();
+            }
+            
+            // Check if we're on HTTPS
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                log('WARNING: Not using HTTPS - Web Speech API may not work');
+                updateStatus('WARNING: HTTPS required for Web Speech API', 'warning');
+            }
+        });
+    </script>
+</body>
+</html>
