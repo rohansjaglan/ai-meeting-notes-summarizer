@@ -2,7 +2,7 @@
   "name": "ai-meeting-notes-summarizer",
   "version": "1.0.0",
   "description": "AI-powered meeting notes summarizer and sharer - web application",
-  "homepage": "./",
+  "homepage": "/",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
