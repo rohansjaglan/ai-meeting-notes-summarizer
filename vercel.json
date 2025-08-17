@@ -1,14 +1,6 @@
 {
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "./build",
-        "buildCommand": "CI=false DISABLE_ESLINT_PLUGIN=true npm run build"
-      }
-    }
-  ],
+  "buildCommand": "CI=false DISABLE_ESLINT_PLUGIN=true npm run build",
+  "outputDirectory": "build",
   "routes": [
     {
       "src": "/(.*)",
